@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class WelcomeController {
+public class DefaultController {
 
     @Autowired
     private ApplicationProperties applicationProperties;
@@ -16,4 +16,6 @@ public class WelcomeController {
     public String displayWelcomeMessage(){
         return applicationProperties.getWelcome();
     }
+
+    //todo:add global error handler
 }
