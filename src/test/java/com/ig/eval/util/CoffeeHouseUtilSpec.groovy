@@ -8,4 +8,10 @@ class CoffeeHouseUtilSpec extends Specification {
 
     void cleanup() {
     }
+
+    def "test 1"(){
+        expect:
+        assert true
+
+    }
 }
