@@ -17,7 +17,6 @@ public class CoffeeHouseConfiguration {
         return new InputValidatorService();
     }
 
-
     @Bean
     public CoffeeHouseDAO coffeeHouseDAO() {
         return new CoffeeHouseDAO();

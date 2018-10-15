@@ -8,13 +8,11 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
+import java.util.List;
 
 @Configuration
 @PropertySource("classpath:application.properties")
 public class CoffeeHouseDAO {
-    @Autowired
-    public DataSource dataSource;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -35,5 +33,9 @@ public class CoffeeHouseDAO {
             //todo:redirect to error page
         }
         return customerId;
+    }
+
+    public List<String> getAllPhoneNumbers() {
+        return jdbcTemplate.queryForList("SELECT PHONE_NUMBER FROM CUSTOMER", String.class);
     }
 }

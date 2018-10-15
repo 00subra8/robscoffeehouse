@@ -1,15 +1,22 @@
 package com.ig.eval.service;
 
+import com.ig.eval.dao.CoffeeHouseDAO;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class InputValidatorService {
 
     private Logger logger = LoggerFactory.getLogger(InputValidatorService.class);
+
+    @Autowired
+    private CoffeeHouseDAO coffeeHouseDAO;
 
 
     public boolean validateCustomerName(String customerName) {
@@ -58,5 +65,21 @@ public class InputValidatorService {
         else {
             return false;
         }
+    }
+
+    public boolean isPhoneNumberUnique(String phoneNumber) {
+        List<String> allPhoneNumbers = coffeeHouseDAO.getAllPhoneNumbers();
+
+        if (allPhoneNumbers == null || allPhoneNumbers.isEmpty()) {
+            return true;
+        }
+
+        Optional<String> matchedString = allPhoneNumbers.stream()
+                .filter(StringUtils::isNotBlank)
+                .filter(currentPhoneNumber -> StringUtils.equalsIgnoreCase(StringUtils.trim(phoneNumber),
+                        StringUtils.trim(currentPhoneNumber)))
+                .findAny();
+
+        return !matchedString.isPresent();
     }
 }
