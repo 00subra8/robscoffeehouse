@@ -6,9 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public class PrepareCoffeeHouseDB {
 
-//INSERT INTO CUSTOMER VALUES (SEQ_CUST_ID.NEXTVAL, 'ROB', '07404582721')
 //    SELECT * FROM CUSTOMER WHERE ID = 1
-//SELECT SEQ_CUST_ID.NEXTVAL
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
