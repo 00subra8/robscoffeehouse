@@ -17,5 +17,5 @@ public class DefaultController {
         return applicationProperties.getWelcome();
     }
 
-    //todo:add global error handler
+    //todo:add global error mapping
 }

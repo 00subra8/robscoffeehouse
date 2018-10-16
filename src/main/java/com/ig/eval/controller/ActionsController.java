@@ -31,7 +31,7 @@ public class ActionsController {
 
         if (customer == null) {
             String noInputExceptionMessage = "No Customer Input received";
-            return logAndThrowCoffeeHouseInputException(noInputExceptionMessage);
+            logAndThrowCoffeeHouseInputException(noInputExceptionMessage);
         }
         if (!inputValidatorService.validateCustomerName(customer.getCustomerName())) {
             String invalidCustomerNameMessage = "Invalid CustomerName: " + customer.getCustomerName();
@@ -52,9 +52,9 @@ public class ActionsController {
 
     }
 
-    private String logAndThrowCoffeeHouseInputException(String noInputExceptionMessage) {
-        logger.error(noInputExceptionMessage);
-        throw new CoffeeHouseInputException(noInputExceptionMessage);
+    private String logAndThrowCoffeeHouseInputException(String inputExceptionMessage) {
+        logger.error(inputExceptionMessage);
+        throw new CoffeeHouseInputException(inputExceptionMessage);
     }
 
 
