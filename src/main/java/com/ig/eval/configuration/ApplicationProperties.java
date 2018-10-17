@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "rch")
 public class ApplicationProperties {
 
-    public String welcome;
+    private String welcome;
 
     public String getWelcome() {
         return welcome;

@@ -17,4 +17,6 @@ public class CoffeeHouseConfiguration {
     public CoffeeHouseDAO coffeeHouseDAO() {
         return new CoffeeHouseDAO();
     }
+
 }
+

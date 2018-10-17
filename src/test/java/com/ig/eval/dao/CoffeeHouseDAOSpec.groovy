@@ -2,11 +2,9 @@ package com.ig.eval.dao
 
 import com.ig.eval.exception.CoffeeHouseDAOException
 import com.ig.eval.model.Customer
-import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
-import spock.lang.Unroll
 
 @Transactional
 class CoffeeHouseDAOSpec extends Specification {
