@@ -30,7 +30,6 @@ public class CucumberStepDefinitions {
     private static final String APPLICATION_JSON = "application/json";
 
 
-
     private final WireMockServer wireMockServer = new WireMockServer(Options.DYNAMIC_PORT);
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -42,18 +41,9 @@ public class CucumberStepDefinitions {
 
         wireMockServer.start();
 
-        configureFor("localhost", wireMockServer.port());
-        stubFor(post(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON))
-                .withRequestBody(containing(customerList.get(0).getCustomerName()))
-                .withRequestBody(containing(customerList.get(0).getPhoneNumber()))
-                .willReturn(aResponse().withStatus(200)));
+        configureAndStubWireMock(customerList, 200);
 
-        HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + ADD_CUSTOMER_PATH);
-        StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
-        request.addHeader("content-type", APPLICATION_JSON);
-        request.setEntity(entity);
-        HttpResponse response = httpClient.execute(request);
+        HttpResponse response = postRequestAndGetResponse(jsonString);
 
         assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
         verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
@@ -70,18 +60,9 @@ public class CucumberStepDefinitions {
 
         wireMockServer.start();
 
-        configureFor("localhost", wireMockServer.port());
-        stubFor(post(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON))
-                .withRequestBody(containing(customerList.get(0).getCustomerName()))
-                .withRequestBody(containing(customerList.get(0).getPhoneNumber()))
-                .willReturn(aResponse().withStatus(400)));
+        configureAndStubWireMock(customerList, 400);
 
-        HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + ADD_CUSTOMER_PATH);
-        StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
-        request.addHeader("content-type", APPLICATION_JSON);
-        request.setEntity(entity);
-        HttpResponse response = httpClient.execute(request);
+        HttpResponse response = postRequestAndGetResponse(jsonString);
 
         assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
         verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
@@ -98,18 +79,9 @@ public class CucumberStepDefinitions {
 
         wireMockServer.start();
 
-        configureFor("localhost", wireMockServer.port());
-        stubFor(post(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON))
-                .withRequestBody(containing(customerList.get(0).getCustomerName()))
-                .withRequestBody(containing(customerList.get(0).getPhoneNumber()))
-                .willReturn(aResponse().withStatus(400)));
+        configureAndStubWireMock(customerList, 400);
 
-        HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + ADD_CUSTOMER_PATH);
-        StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
-        request.addHeader("content-type", APPLICATION_JSON);
-        request.setEntity(entity);
-        HttpResponse response = httpClient.execute(request);
+        HttpResponse response = postRequestAndGetResponse(jsonString);
 
         assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
         verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
@@ -117,6 +89,23 @@ public class CucumberStepDefinitions {
 
         wireMockServer.stop();
 
+    }
+
+    private HttpResponse postRequestAndGetResponse(String jsonString) throws IOException {
+        HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + ADD_CUSTOMER_PATH);
+        StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
+        request.addHeader("content-type", APPLICATION_JSON);
+        request.setEntity(entity);
+        return httpClient.execute(request);
+    }
+
+    private void configureAndStubWireMock(List<Customer> customerList, int status) {
+        configureFor("localhost", wireMockServer.port());
+        stubFor(post(urlEqualTo(ADD_CUSTOMER_PATH))
+                .withHeader("content-type", equalTo(APPLICATION_JSON))
+                .withRequestBody(containing(customerList.get(0).getCustomerName()))
+                .withRequestBody(containing(customerList.get(0).getPhoneNumber()))
+                .willReturn(aResponse().withStatus(status)));
     }
 
 }
