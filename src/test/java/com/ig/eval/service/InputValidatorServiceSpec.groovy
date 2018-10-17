@@ -1,9 +1,9 @@
 package com.ig.eval.service
 
 import com.ig.eval.dao.CoffeeHouseDAO
-import spock.lang.Specification
-
+import com.ig.eval.exception.CoffeeHouseInputException
 import org.slf4j.Logger
+import spock.lang.Specification
 import spock.lang.Unroll
 
 class InputValidatorServiceSpec extends Specification {
@@ -93,6 +93,50 @@ class InputValidatorServiceSpec extends Specification {
         ["1234567890", "+441234567890", "2345678901"] | "1234567890"    | false
         []                                            | "1234567890"    | true
         null                                          | "1234567890"    | true
+    }
+
+    @Unroll("For coffee variety #variety expected result is #result")
+    def "Check if new coffee variety is unique"(def varietyDBList, String variety, boolean result) {
+        given:
+        unit.coffeeHouseDAO = Mock(CoffeeHouseDAO)
+        unit.coffeeHouseDAO.getAllVarietyNames() >> varietyDBList
+
+        expect:
+        unit.isVarietyUnique(variety) == result
+
+        where:
+        varietyDBList              | variety | result
+        ["Cafe", "Mocha", "Latte"] | "Chai"  | true
+        ["Cafe", "Mocha", "Latte"] | "Mocha" | false
+        []                         | "Latte" | true
+        null                       | "Mocha" | true
+    }
+
+    @Unroll("For available quantity #availableQuantity the validity is #validity")
+    def "Check if available quantity is valid"(String availableQuantity, boolean validity) {
+        expect:
+        validity == unit.isAvailabilityValid(availableQuantity)
+
+        where:
+        availableQuantity | validity
+        "34"              | true
+        "0"               | true
+        "300"             | true
+        "-1"              | false
+        "-150"            | false
+    }
+
+    @Unroll("For available quantity #availableQuantity Exception is thrown")
+    def "Check if Exception is thrown for invalid available"(String availableQuantity) {
+        when:
+        unit.isAvailabilityValid(availableQuantity)
+
+        then:
+        1 * unit.logger.error("Available quantity not a number")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        availableQuantity << [null, "", " ", "dfsd"]
     }
 
 }

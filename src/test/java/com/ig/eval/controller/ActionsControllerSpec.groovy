@@ -2,10 +2,12 @@ package com.ig.eval.controller
 
 import com.ig.eval.dao.CoffeeHouseDAO
 import com.ig.eval.exception.CoffeeHouseInputException
+import com.ig.eval.model.CoffeeVariety
 import com.ig.eval.model.Customer
 import com.ig.eval.service.InputValidatorService
 import org.slf4j.Logger
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class ActionsControllerSpec extends Specification {
 
@@ -91,6 +93,85 @@ class ActionsControllerSpec extends Specification {
         then:
         notThrown(CoffeeHouseInputException)
         response == "Customer: " + customer.getCustomerName() + " added. Their Customer id is: " + customerId
+    }
+
+    def "Try to add null Coffee Variety"() {
+        when:
+        unit.addCoffeeVariety(null)
+
+        then:
+        1 * unit.logger.error("No Coffee variety Input received")
+        thrown(CoffeeHouseInputException)
+    }
+
+    @Unroll("CoffeeVariety name varietyName: #varietyName is invalid")
+    def "Try to add Coffee Variety with Invalid name"(String varietyName) {
+        given:
+        CoffeeVariety coffeeVariety = new CoffeeVariety()
+        coffeeVariety.setName(varietyName)
+
+        when:
+        unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        1 * unit.logger.error("Blank Coffee Variety name ")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        varietyName << [null, "", " "]
+    }
+
+    @Unroll("CoffeeVariety name availableQuantity #availableQuantity is invalid")
+    def "Try to add Coffee Variety with Invalid available quantity"(String availableQuantity) {
+        given:
+        CoffeeVariety coffeeVariety = new CoffeeVariety()
+        coffeeVariety.setName("Filter Coffee")
+        coffeeVariety.setDescription("Filter Coffee")
+        coffeeVariety.setAvailableQuantity(availableQuantity)
+        unit.inputValidatorService.isVarietyUnique(coffeeVariety.getName()) >> true
+        unit.inputValidatorService.isAvailabilityValid(coffeeVariety.getAvailableQuantity()) >> false
+
+        when:
+        unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        1 * unit.logger.error("Invalid Availability: " + availableQuantity + ". Available quantity should be an integer between 0 and 300")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        availableQuantity << [null, "", " ", "-1", "sdaa", "301"]
+    }
+
+    def "Try to add duplicate Coffee Variety name"() {
+        given:
+        CoffeeVariety coffeeVariety = new CoffeeVariety()
+        coffeeVariety.setName("Cappuccino")
+        unit.inputValidatorService.isVarietyUnique(coffeeVariety.getName()) >> false
+
+        when:
+        unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        1 * unit.logger.error("Duplicate variety name: " + coffeeVariety.getName())
+        thrown(CoffeeHouseInputException)
+    }
+
+    def "Try to add valid Coffee Variety "() {
+        given:
+        CoffeeVariety coffeeVariety = new CoffeeVariety()
+        coffeeVariety.setName("Chai Latte")
+        coffeeVariety.setDescription("Indian Chai with a british tinge")
+        coffeeVariety.setAvailableQuantity("75")
+        unit.inputValidatorService.isVarietyUnique(coffeeVariety.getName()) >> true
+        unit.inputValidatorService.isAvailabilityValid(coffeeVariety.getAvailableQuantity()) >> true
+        def varietyId = 12
+        unit.coffeeHouseDAO.addCoffeeVariety(coffeeVariety) >> varietyId
+
+        when:
+        def result = unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        result == "Coffee Variety " + coffeeVariety.getName() + " added successfully to the menu. Menu item number is: " + varietyId
     }
 
 }

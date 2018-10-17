@@ -1,10 +1,12 @@
 package com.ig.eval.service;
 
 import com.ig.eval.dao.CoffeeHouseDAO;
+import com.ig.eval.exception.CoffeeHouseInputException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,16 +61,47 @@ public class InputValidatorService {
     public boolean isPhoneNumberUnique(String phoneNumber) {
         List<String> allPhoneNumbers = coffeeHouseDAO.getAllPhoneNumbers();
 
-        if (allPhoneNumbers == null || allPhoneNumbers.isEmpty()) {
+        if (CollectionUtils.isEmpty(allPhoneNumbers)) {
             return true;
         }
 
-        Optional<String> matchedString = allPhoneNumbers.stream()
+        Optional<String> matchedPhoneNumber = getMatch(phoneNumber, allPhoneNumbers);
+
+        return !matchedPhoneNumber.isPresent();
+    }
+
+    public boolean isVarietyUnique(String coffeeVarietyName) {
+        List<String> allVarietyNames = coffeeHouseDAO.getAllVarietyNames();
+
+        if (CollectionUtils.isEmpty(allVarietyNames)) {
+            return true;
+        }
+
+        Optional<String> matchedVarietyName = getMatch(coffeeVarietyName, allVarietyNames);
+
+        return !matchedVarietyName.isPresent();
+    }
+
+    private Optional<String> getMatch(String matchString, List<String> allValues) {
+        return allValues.stream()
                 .filter(StringUtils::isNotBlank)
-                .filter(currentPhoneNumber -> StringUtils.equalsIgnoreCase(StringUtils.trim(phoneNumber),
+                .filter(currentPhoneNumber -> StringUtils.equalsIgnoreCase(StringUtils.trim(matchString),
                         StringUtils.trim(currentPhoneNumber)))
                 .findFirst();
+    }
 
-        return !matchedString.isPresent();
+    public boolean isAvailabilityValid(String availableQuantity) {
+        try {
+            int intAvailableQuantity = Integer.parseInt(availableQuantity);
+            if (intAvailableQuantity < 0 || intAvailableQuantity > 300) {
+                return false;
+            }
+        } catch (NumberFormatException nfe) {
+            String availableQuantityInvalidMessage = "Available quantity not a number";
+            logger.error(availableQuantityInvalidMessage);
+            throw new CoffeeHouseInputException(availableQuantityInvalidMessage);
+        }
+
+        return true;
     }
 }

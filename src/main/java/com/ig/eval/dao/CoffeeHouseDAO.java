@@ -1,6 +1,7 @@
 package com.ig.eval.dao;
 
 import com.ig.eval.exception.CoffeeHouseDAOException;
+import com.ig.eval.model.CoffeeVariety;
 import com.ig.eval.model.Customer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,7 @@ public class CoffeeHouseDAO {
             jdbcTemplate.update("INSERT INTO CUSTOMER(ID, NAME, PHONE_NUMBER) VALUES (?, ?, ?)", customerId,
                     customer.getCustomerName(), customer.getPhoneNumber());
         } catch (DataAccessException dae) {
-            throw new CoffeeHouseDAOException("Unable to retrieve information from DB");
+            throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB");
         }
         return customerId;
     }
@@ -40,4 +41,32 @@ public class CoffeeHouseDAO {
             throw new CoffeeHouseDAOException("Unable to retrieve information from DB");
         }
     }
+
+    public Long addCoffeeVariety(CoffeeVariety coffeeVariety) {
+        if (coffeeVariety == null) {
+            throw new CoffeeHouseDAOException("coffeeVariety object not received");
+        }
+        Long varietyId;
+        try {
+            varietyId = jdbcTemplate.queryForObject("SELECT SEQ_COFFEE_VARIETY_ID.NEXTVAL", Long.class);
+            if (varietyId == null) {
+                throw new CoffeeHouseDAOException("Unable to retrieve variety Id");
+            }
+            jdbcTemplate.update("INSERT INTO COFFEE_VARIETY(ID, NAME, DESCRIPTION, AVAILABLE_QUANTITY) " +
+                            "VALUES (?, ?, ?, ?)", varietyId, coffeeVariety.getName(), coffeeVariety.getDescription(),
+                    Integer.valueOf(coffeeVariety.getAvailableQuantity()));
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB");
+        }
+        return varietyId;
+    }
+
+    public List<String> getAllVarietyNames() {
+        try {
+            return jdbcTemplate.queryForList("SELECT NAME FROM COFFEE_VARIETY", String.class);
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve information from DB");
+        }
+    }
 }
+

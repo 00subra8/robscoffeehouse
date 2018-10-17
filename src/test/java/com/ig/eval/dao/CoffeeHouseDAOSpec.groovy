@@ -1,7 +1,9 @@
 package com.ig.eval.dao
 
 import com.ig.eval.exception.CoffeeHouseDAOException
+import com.ig.eval.model.CoffeeVariety
 import com.ig.eval.model.Customer
+import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
@@ -23,7 +25,7 @@ class CoffeeHouseDAOSpec extends Specification {
         thrown(CoffeeHouseDAOException)
     }
 
-    def "Exception while retrieving sequence"() {
+    def "Exception while retrieving sequence - customer"() {
         given:
         unit.jdbcTemplate.queryForObject("SELECT SEQ_CUST_ID.NEXTVAL", Long.class) >> null
 
@@ -61,7 +63,56 @@ class CoffeeHouseDAOSpec extends Specification {
 
         then:
         result == phoneNumberList
+    }
 
+    def "get All Variety Names"() {
+        given:
+        def varietyList = ["Mocha", "Cappuccino"]
+        unit.jdbcTemplate.queryForList("SELECT NAME FROM COFFEE_VARIETY", String.class) >> varietyList
+
+        when:
+        def result = unit.getAllVarietyNames()
+
+        then:
+        result == varietyList
+    }
+
+    def "Add null coffee variety"() {
+        when:
+        unit.addCoffeeVariety(null)
+
+        then:
+        thrown(CoffeeHouseDAOException)
+    }
+
+    def "Exception while retrieving sequence - coffee variety"() {
+        given:
+        unit.jdbcTemplate.queryForObject("SELECT SEQ_COFFEE_VARIETY_ID.NEXTVAL", Long.class) >> null
+
+        when:
+        unit.addCoffeeVariety(new CoffeeVariety())
+
+        then:
+        thrown(CoffeeHouseDAOException)
+    }
+
+    def "Adding a coffee variety"() {
+        given:
+        def coffeeVariety = new CoffeeVariety()
+        coffeeVariety.name = "Latte"
+        coffeeVariety.description = "Milk and Milk"
+        coffeeVariety.availableQuantity = "65"
+        def varietyId = new Long(5)
+        unit.jdbcTemplate.queryForObject("SELECT SEQ_COFFEE_VARIETY_ID.NEXTVAL", Long.class) >> varietyId
+        unit.jdbcTemplate.update("INSERT INTO COFFEE_VARIETY(ID, NAME, DESCRIPTION, AVAILABLE_QUANTITY) " +
+                "VALUES (?, ?, ?, ?)", varietyId, coffeeVariety.getName(), coffeeVariety.getDescription(),
+                Integer.valueOf(coffeeVariety.getAvailableQuantity())) >> null
+
+        when:
+        unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        notThrown(CoffeeHouseDAOException)
     }
 
 }
