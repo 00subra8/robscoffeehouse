@@ -127,7 +127,7 @@ class InputValidatorServiceSpec extends Specification {
     }
 
     @Unroll("For available quantity #availableQuantity Exception is thrown")
-    def "Check if Exception is thrown for invalid available"(String availableQuantity) {
+    def "Check if Exception is thrown for invalid availability"(String availableQuantity) {
         when:
         unit.isAvailabilityValid(availableQuantity)
 
@@ -137,6 +137,40 @@ class InputValidatorServiceSpec extends Specification {
 
         where:
         availableQuantity << [null, "", " ", "dfsd"]
+    }
+
+    @Unroll("For price #price the validity is #validity")
+    def "Check if price is valid"(String price, boolean validity) {
+        expect:
+        unit.isPriceValid(price) == validity
+
+        where:
+        price    | validity
+        "34"     | true
+        "0"      | true
+        "300"    | true
+        "-1"     | false
+        "-1.5"   | false
+        "1.50"   | true
+        "15.10"  | true
+        "150.55" | true
+        "7.555"  | false
+        "7.0"    | true
+        "7.00"   | true
+        "7."     | true
+    }
+
+    @Unroll("For price #price Exception is thrown")
+    def "Check if Exception is thrown for invalid price"(String price) {
+        when:
+        unit.isPriceValid(price)
+
+        then:
+        1 * unit.logger.error("Price not a number")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        price << [null, "", " ", "dfsd", "4.5J"]
     }
 
 }

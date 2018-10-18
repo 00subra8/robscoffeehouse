@@ -2,11 +2,11 @@ package com.ig.eval.service;
 
 import com.ig.eval.dao.CoffeeHouseDAO;
 import com.ig.eval.exception.CoffeeHouseInputException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 
 public class InputValidatorService {
 
+    public static final String DECIMAL_SEPERATOR_REGEX = "\\.";
+    public static final String DEFAULT_BLANK_STR = "";
     private Logger logger = LoggerFactory.getLogger(InputValidatorService.class);
 
     @Autowired
@@ -83,7 +85,7 @@ public class InputValidatorService {
     }
 
     private Optional<String> getMatch(String matchString, List<String> allValues) {
-        return allValues.stream()
+        return CollectionUtils.emptyIfNull(allValues).stream()
                 .filter(StringUtils::isNotBlank)
                 .filter(currentPhoneNumber -> StringUtils.equalsIgnoreCase(StringUtils.trim(matchString),
                         StringUtils.trim(currentPhoneNumber)))
@@ -103,5 +105,53 @@ public class InputValidatorService {
         }
 
         return true;
+    }
+
+    public boolean isVarietyPresent(String coffeeVarietyName) {
+        List<String> allVarietyNames = coffeeHouseDAO.getAllVarietyNames();
+
+        Optional<String> matchedVariety = getMatch(coffeeVarietyName, allVarietyNames);
+
+        return matchedVariety.isPresent();
+    }
+
+    public boolean isItemAvailable(String coffeeVarietyName, String quantity) {
+        List<String> allVarietyNames = coffeeHouseDAO.getAllVarietyNames();
+
+        Optional<String> matchedVariety = getMatch(coffeeVarietyName, allVarietyNames);
+        if (matchedVariety.isPresent()) {
+            int availableQuantity = coffeeHouseDAO.getAvailableQuantity(matchedVariety.get());
+            return availableQuantity >= Integer.valueOf(quantity);
+        }
+        return false;
+    }
+
+    public boolean isPriceValid(String price) {
+        int decimalDigitsLength = getDecimalDigits(price);
+        if (decimalDigitsLength > 2) {
+            return false;
+        }
+        try {
+            double doublePrice = Double.parseDouble(price);
+            if (doublePrice < 0) {
+                return false;
+            }
+        } catch (NumberFormatException|NullPointerException nfe) {
+            String priceInvalidMessage = "Price not a number";
+            logger.error(priceInvalidMessage);
+            throw new CoffeeHouseInputException(priceInvalidMessage);
+        }
+
+        return true;
+    }
+
+    private int getDecimalDigits(String price) {
+        if (StringUtils.isNotBlank(price)) {
+            String[] splitPrice = price.split(DECIMAL_SEPERATOR_REGEX);
+            if (splitPrice.length > 1) {
+                return StringUtils.defaultIfBlank(splitPrice[1], DEFAULT_BLANK_STR).length();
+            }
+        }
+        return 0;
     }
 }

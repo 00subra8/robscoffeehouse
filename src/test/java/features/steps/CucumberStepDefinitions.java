@@ -150,6 +150,25 @@ public class CucumberStepDefinitions {
 
     }
 
+    @When("^Post Request with below invalid price value is requested to get \"([^\"]+)\" http status response$")
+    public void postCoffeeVarietyWithInvalidPrice(String expectedStatus, List<CoffeeVariety> coffeeVarietyList) throws IOException {
+        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_coffee_variety_price_invalid.json");
+        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+
+        wireMockServer.start();
+
+        configureAndStubWireMockForCoffeeVarietyAdd(coffeeVarietyList, 400);
+
+        HttpResponse response = postRequestAndGetResponse(jsonString,ADD_COFFEE_VARIETY_PATH);
+
+        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
+        verify(postRequestedFor(urlEqualTo(ADD_COFFEE_VARIETY_PATH))
+                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+
+        wireMockServer.stop();
+
+    }
+
     private HttpResponse postRequestAndGetResponse(String jsonString, String endpoint) throws IOException {
         HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + endpoint);
         StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
@@ -174,6 +193,7 @@ public class CucumberStepDefinitions {
                 .withRequestBody(containing(coffeeVarietyList.get(0).getName()))
                 .withRequestBody(containing(coffeeVarietyList.get(0).getDescription()))
                 .withRequestBody(containing(coffeeVarietyList.get(0).getAvailableQuantity()))
+                .withRequestBody(containing(coffeeVarietyList.get(0).getPrice()))
                 .willReturn(aResponse().withStatus(status)));
     }
 

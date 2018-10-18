@@ -121,7 +121,7 @@ class ActionsControllerSpec extends Specification {
         varietyName << [null, "", " "]
     }
 
-    @Unroll("CoffeeVariety name availableQuantity #availableQuantity is invalid")
+    @Unroll("CoffeeVariety availableQuantity #availableQuantity is invalid")
     def "Try to add Coffee Variety with Invalid available quantity"(String availableQuantity) {
         given:
         CoffeeVariety coffeeVariety = new CoffeeVariety()
@@ -142,6 +142,30 @@ class ActionsControllerSpec extends Specification {
         availableQuantity << [null, "", " ", "-1", "sdaa", "301"]
     }
 
+    @Unroll("CoffeeVariety price #price is invalid")
+    def "Try to add Coffee Variety with Invalid price"(String price) {
+        given:
+        CoffeeVariety coffeeVariety = new CoffeeVariety()
+        coffeeVariety.setName("Filter Coffee")
+        coffeeVariety.setDescription("Filter Coffee")
+        coffeeVariety.setAvailableQuantity("45")
+        coffeeVariety.setPrice(price)
+        unit.inputValidatorService.isVarietyUnique(coffeeVariety.getName()) >> true
+        unit.inputValidatorService.isAvailabilityValid(coffeeVariety.getAvailableQuantity()) >> true
+        unit.inputValidatorService.isPriceValid(coffeeVariety.getPrice()) >> false
+
+        when:
+        unit.addCoffeeVariety(coffeeVariety)
+
+        then:
+        1 * unit.logger.error("Invalid Price: " + coffeeVariety.getPrice() + ". " +
+                "Price should be a positive double like : 3.50, 100.00, 20")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        price << [null, "", " ", "-1", "sdaa", "30.5s"]
+    }
+
     def "Try to add duplicate Coffee Variety name"() {
         given:
         CoffeeVariety coffeeVariety = new CoffeeVariety()
@@ -159,11 +183,13 @@ class ActionsControllerSpec extends Specification {
     def "Try to add valid Coffee Variety "() {
         given:
         CoffeeVariety coffeeVariety = new CoffeeVariety()
-        coffeeVariety.setName("Chai Latte")
-        coffeeVariety.setDescription("Indian Chai with a british tinge")
-        coffeeVariety.setAvailableQuantity("75")
+        coffeeVariety.name = "Chai Latte"
+        coffeeVariety.description = "Indian Chai with a british tinge"
+        coffeeVariety.availableQuantity = "75"
+        coffeeVariety.price = "7.75"
         unit.inputValidatorService.isVarietyUnique(coffeeVariety.getName()) >> true
         unit.inputValidatorService.isAvailabilityValid(coffeeVariety.getAvailableQuantity()) >> true
+        unit.inputValidatorService.isPriceValid(coffeeVariety.getPrice()) >> true
         def varietyId = 12
         unit.coffeeHouseDAO.addCoffeeVariety(coffeeVariety) >> varietyId
 

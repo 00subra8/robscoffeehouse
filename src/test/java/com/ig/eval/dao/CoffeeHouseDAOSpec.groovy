@@ -102,11 +102,12 @@ class CoffeeHouseDAOSpec extends Specification {
         coffeeVariety.name = "Latte"
         coffeeVariety.description = "Milk and Milk"
         coffeeVariety.availableQuantity = "65"
+        coffeeVariety.price = "4.50"
         def varietyId = new Long(5)
         unit.jdbcTemplate.queryForObject("SELECT SEQ_COFFEE_VARIETY_ID.NEXTVAL", Long.class) >> varietyId
-        unit.jdbcTemplate.update("INSERT INTO COFFEE_VARIETY(ID, NAME, DESCRIPTION, AVAILABLE_QUANTITY) " +
-                "VALUES (?, ?, ?, ?)", varietyId, coffeeVariety.getName(), coffeeVariety.getDescription(),
-                Integer.valueOf(coffeeVariety.getAvailableQuantity())) >> null
+        unit.jdbcTemplate.update("INSERT INTO COFFEE_VARIETY(ID, NAME, DESCRIPTION, AVAILABLE_QUANTITY, PRICE) " +
+                "VALUES (?, ?, ?, ?, ?)", varietyId, coffeeVariety.name, coffeeVariety.description,
+                Integer.valueOf(coffeeVariety.availableQuantity), Double.valueOf(coffeeVariety.price)) >> null
 
         when:
         unit.addCoffeeVariety(coffeeVariety)
