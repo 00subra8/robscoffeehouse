@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -99,7 +101,13 @@ public class ActionsController {
             logAndThrowCoffeeHouseInputException("Customer phone number cannot be blank.");
         }
 
-        List<OrderItem> orderItemList = order.getOrderItemList();
+        //todo: Assumed customers cant be created while ordering.
+        if (!inputValidatorService.isCustomerValid(order.getCustomerPhoneNumber())) {
+            logAndThrowCoffeeHouseInputException("Customer with Phone Number: " + order.getCustomerPhoneNumber()
+                    + " not in records. Please add new customer and reorder.");
+        }
+
+        List<OrderItem> orderItemList = order.getItemList();
         if (CollectionUtils.isEmpty(orderItemList)) {
             logAndThrowCoffeeHouseInputException("At least one item should be ordered.");
         }
@@ -108,7 +116,15 @@ public class ActionsController {
                 .filter(Objects::nonNull)
                 .forEach(this::checkValidVariety);
 
+        order.setOrderTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
+        order.setCustomerName(coffeeHouseDAO.getCustomerName(StringUtils.trim(order.getCustomerName())));
+
         int orderId = coffeeHouseDAO.addOrder(order);
+        order.setOrderId(orderId);
+
+        coffeeHouseDAO.adjustAvailability(order);
+
+        generateOrderReceiptService.getReceipt(order);
 
 
         return null;

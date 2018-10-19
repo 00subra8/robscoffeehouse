@@ -136,7 +136,7 @@ public class InputValidatorService {
             if (doublePrice < 0) {
                 return false;
             }
-        } catch (NumberFormatException|NullPointerException nfe) {
+        } catch (NumberFormatException | NullPointerException nfe) {
             String priceInvalidMessage = "Price not a number";
             logger.error(priceInvalidMessage);
             throw new CoffeeHouseInputException(priceInvalidMessage);
@@ -153,5 +153,16 @@ public class InputValidatorService {
             }
         }
         return 0;
+    }
+
+    public boolean isCustomerValid(String customerPhoneNumber) {
+        List<String> allPhoneNumbers = coffeeHouseDAO.getAllPhoneNumbers();
+
+        if (CollectionUtils.isEmpty(allPhoneNumbers)) {
+            return false;
+        }
+
+        Optional<String> matchedPhoneNumber = getMatch(customerPhoneNumber, allPhoneNumbers);
+        return matchedPhoneNumber.isPresent();
     }
 }

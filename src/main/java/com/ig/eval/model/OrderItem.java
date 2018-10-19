@@ -4,7 +4,6 @@ public class OrderItem {
 
     private String coffeeVarietyName;
     private String quantity;
-    private int coffeeVarietyId;
 
     public String getQuantity() {
         return quantity;
@@ -22,11 +21,4 @@ public class OrderItem {
         this.coffeeVarietyName = coffeeVarietyName;
     }
 
-    public int getCoffeeVarietyId() {
-        return coffeeVarietyId;
-    }
-
-    public void setCoffeeVarietyId(int coffeeVarietyId) {
-        this.coffeeVarietyId = coffeeVarietyId;
-    }
 }

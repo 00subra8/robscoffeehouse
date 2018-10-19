@@ -1,21 +1,23 @@
 package com.ig.eval.model;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public class Order {
     private String customerPhoneNumber;
     private String customerName;
-    private List<OrderItem> orderItemList;
+    private List<OrderItem> itemList;
     private int customerId;
     private int customerHistoricalOrderNumber;
     private int orderId;
+    private Timestamp orderTimeStamp;
 
-    public List<OrderItem> getOrderItemList() {
-        return orderItemList;
+    public List<OrderItem> getItemList() {
+        return itemList;
     }
 
-    public void setOrderItemList(List<OrderItem> orderItemList) {
-        this.orderItemList = orderItemList;
+    public void setItemList(List<OrderItem> itemList) {
+        this.itemList = itemList;
     }
 
     public String getCustomerPhoneNumber() {
@@ -56,5 +58,13 @@ public class Order {
 
     public void setOrderId(int orderId) {
         this.orderId = orderId;
+    }
+
+    public Timestamp getOrderTimeStamp() {
+        return orderTimeStamp;
+    }
+
+    public void setOrderTimeStamp(Timestamp orderTimeStamp) {
+        this.orderTimeStamp = orderTimeStamp;
     }
 }

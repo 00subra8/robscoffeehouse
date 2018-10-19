@@ -5,16 +5,16 @@ import com.ig.eval.model.CoffeeVariety;
 import com.ig.eval.model.Customer;
 import com.ig.eval.model.Order;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
-@Configuration
+@Transactional
 public class CoffeeHouseDAO {
 
     @Autowired
@@ -83,24 +83,86 @@ public class CoffeeHouseDAO {
     }
 
     public int addOrder(Order order) {
-//        if (order == null) {
-//            throw new CoffeeHouseDAOException("order object not received");
-//        }
-//        Long orderId;
-//        try {
-//            orderId = jdbcTemplate.queryForObject("SELECT SEQ_ORDERS.NEXTVAL", Long.class);
-//            if (orderId == null) {
-//                throw new CoffeeHouseDAOException("Unable to retrieve orderId Id");
-//            }
-//            CollectionUtils.emptyIfNull(order.getOrderItemList())
-//            jdbcTemplate.update("INSERT INTO ORDERS(ID, CUSTOMER_ID, COFFEE_VARIETY_ID, QUANTITY, ORDER_TIME) " +
-//                            "VALUES (?, ?, ?, ?, ?)", varietyId, coffeeVariety.getName(), coffeeVariety.getDescription(),
-//                    Timestamp.valueOf(LocalDateTime.now()));
-//        } catch (DataAccessException dae) {
-//            throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB");
-//        }
-//        return varietyId;
-        return 0;
+        if (order == null) {
+            throw new CoffeeHouseDAOException("order object not received");
+        }
+        Integer orderId;
+
+        Integer customerId = getCustomerId(StringUtils.trim(order.getCustomerPhoneNumber()));
+
+        try {
+            orderId = jdbcTemplate.queryForObject("SELECT SEQ_ORDERS.NEXTVAL", Integer.class);
+            if (orderId == null) {
+                throw new CoffeeHouseDAOException("Unable to retrieve orderId Id");
+            }
+            CollectionUtils.emptyIfNull(order.getItemList()).stream()
+                    .filter(Objects::nonNull)
+                    .forEach(orderItem ->
+                            jdbcTemplate.update("INSERT INTO ORDERS(ID, CUSTOMER_ID, COFFEE_VARIETY_ID, QUANTITY, ORDER_TIME) " +
+                                            "VALUES (?, ?, ?, ?, ?)",
+                                    orderId,
+                                    customerId,
+                                    getCoffeeVarietyId(StringUtils.trim(orderItem.getCoffeeVarietyName())),
+                                    orderItem.getQuantity(),
+                                    order.getOrderTimeStamp())
+                    );
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB");
+        }
+        return orderId;
+    }
+
+    private Integer getCoffeeVarietyId(String coffeeVarietyName) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT ID FROM COFFEE_VARIETY WHERE NAME = ?",
+                    new Object[]{coffeeVarietyName}, Integer.class);
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve coffeeVarietyName from DB");
+        }
+    }
+
+    private Integer getCustomerId(String customerPhoneNumber) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT ID FROM CUSTOMER WHERE PHONE_NUMBER = ?",
+                    new Object[]{customerPhoneNumber}, Integer.class);
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve customer Id from DB");
+        }
+    }
+
+    public String getCustomerName(String customerPhoneNumber) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT NAME FROM CUSTOMER WHERE PHONE_NUMBER = ?",
+                    new Object[]{customerPhoneNumber}, String.class);
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve customer name from DB");
+        }
+    }
+
+    public Double getPrice(String coffeeVarietyName) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT PRICE FROM COFFEE_VARIETY WHERE NAME = ?",
+                    new Object[]{coffeeVarietyName}, Double.class);
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve PRICE from DB");
+        }
+    }
+
+    public void adjustAvailability(Order order) {
+        if (order == null) {
+            throw new CoffeeHouseDAOException("order object not received");
+        }
+        try {
+            CollectionUtils.emptyIfNull(order.getItemList())
+                    .forEach(orderItem ->
+                            jdbcTemplate.update("UPDATE COFFEE_VARIETY SET AVAILABLE_QUANTITY = (AVAILABLE_QUANTITY - ?) " +
+                                            " WHERE ID = ?", getAvailableQuantity(orderItem.getCoffeeVarietyName()),
+                                    getCoffeeVarietyId(orderItem.getCoffeeVarietyName()))
+                    );
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB");
+        }
+
     }
 }
 

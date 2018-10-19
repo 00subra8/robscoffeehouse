@@ -38,8 +38,7 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below customer values is requested to get \"([^\"]+)\" http status response$")
     public void postCustomerAdd(String expectedStatus, List<Customer> customerList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_customer_add.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_customer_add.json");
 
         wireMockServer.start();
 
@@ -47,9 +46,7 @@ public class CucumberStepDefinitions {
 
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_CUSTOMER_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_CUSTOMER_PATH);
 
         wireMockServer.stop();
 
@@ -57,8 +54,7 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below coffee variety values is requested to get \"([^\"]+)\" http status response$")
     public void postCoffeeVarietyAdd(String expectedStatus, List<CoffeeVariety> coffeeVarietyList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_coffee_variety_add.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_coffee_variety_add.json");
 
         wireMockServer.start();
 
@@ -66,9 +62,7 @@ public class CucumberStepDefinitions {
 
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_COFFEE_VARIETY_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
 
         wireMockServer.stop();
 
@@ -76,8 +70,7 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below invalid phone number value is requested to get \"([^\"]+)\" http status response$")
     public void postCustomerInvalidPhoneNumer(String expectedStatus, List<Customer> customerList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_customer_ph_invalid.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_customer_ph_invalid.json");
 
         wireMockServer.start();
 
@@ -85,9 +78,7 @@ public class CucumberStepDefinitions {
 
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_CUSTOMER_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_CUSTOMER_PATH);
 
         wireMockServer.stop();
 
@@ -95,8 +86,7 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below invalid variety name is requested to get \"([^\"]+)\" http status response$")
     public void postCoffeeVarietyWithInvalidName(String expectedStatus, List<CoffeeVariety> coffeeVarietyList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_coffee_variety_name_invalid.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_coffee_variety_name_invalid.json");
 
         wireMockServer.start();
 
@@ -104,9 +94,7 @@ public class CucumberStepDefinitions {
 
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_COFFEE_VARIETY_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
 
         wireMockServer.stop();
 
@@ -114,8 +102,7 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below invalid customer name value is requested to get \"([^\"]+)\" http status response$")
     public void postCustomerInvalidCustomerName(String expectedStatus, List<Customer> customerList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_customer_customer_name_invalid.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_customer_customer_name_invalid.json");
 
         wireMockServer.start();
 
@@ -123,9 +110,7 @@ public class CucumberStepDefinitions {
 
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_CUSTOMER_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_CUSTOMER_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_CUSTOMER_PATH);
 
         wireMockServer.stop();
 
@@ -133,18 +118,15 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below invalid available quantity value is requested to get \"([^\"]+)\" http status response$")
     public void postCoffeeVarietyWithInvalidAvailablity(String expectedStatus, List<CoffeeVariety> coffeeVarietyList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_coffee_variety_available_quantity_invalid.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_coffee_variety_available_quantity_invalid.json");
 
         wireMockServer.start();
 
         configureAndStubWireMockForCoffeeVarietyAdd(coffeeVarietyList, 400);
 
-        HttpResponse response = postRequestAndGetResponse(jsonString,ADD_COFFEE_VARIETY_PATH);
+        HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_COFFEE_VARIETY_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
 
         wireMockServer.stop();
 
@@ -152,18 +134,15 @@ public class CucumberStepDefinitions {
 
     @When("^Post Request with below invalid price value is requested to get \"([^\"]+)\" http status response$")
     public void postCoffeeVarietyWithInvalidPrice(String expectedStatus, List<CoffeeVariety> coffeeVarietyList) throws IOException {
-        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream("sample_coffee_variety_price_invalid.json");
-        String jsonString = new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+        String jsonString = getJsonString("jsonSamples/sample_coffee_variety_price_invalid.json");
 
         wireMockServer.start();
 
         configureAndStubWireMockForCoffeeVarietyAdd(coffeeVarietyList, 400);
 
-        HttpResponse response = postRequestAndGetResponse(jsonString,ADD_COFFEE_VARIETY_PATH);
+        HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
-        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
-        verify(postRequestedFor(urlEqualTo(ADD_COFFEE_VARIETY_PATH))
-                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+        assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
 
         wireMockServer.stop();
 
@@ -197,4 +176,14 @@ public class CucumberStepDefinitions {
                 .willReturn(aResponse().withStatus(status)));
     }
 
+    private void assertResponse(String expectedStatus, HttpResponse response, String addCustomerPath) {
+        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
+        verify(postRequestedFor(urlEqualTo(addCustomerPath))
+                .withHeader("content-type", equalTo(APPLICATION_JSON)));
+    }
+
+    private String getJsonString(String s) {
+        InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream(s);
+        return new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+    }
 }

@@ -1,6 +1,7 @@
 package com.ig.eval.configuration;
 
 import com.ig.eval.dao.CoffeeHouseDAO;
+import com.ig.eval.model.ReceiptBuilder;
 import com.ig.eval.service.GenerateOrderReceiptService;
 import com.ig.eval.service.InputValidatorService;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,11 @@ public class CoffeeHouseConfiguration {
     @Bean
     public CoffeeHouseDAO coffeeHouseDAO() {
         return new CoffeeHouseDAO();
+    }
+
+    @Bean
+    public ReceiptBuilder receiptBuilder() {
+        return new ReceiptBuilder();
     }
 
 }

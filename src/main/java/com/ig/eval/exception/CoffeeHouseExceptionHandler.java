@@ -31,21 +31,32 @@ public class CoffeeHouseExceptionHandler extends ResponseEntityExceptionHandler 
 
     @ExceptionHandler(CoffeeHouseInputException.class)
     public final ResponseEntity<ErrorMessage> inputExceptionHandler(CoffeeHouseInputException coffeeHouseInputException) {
-        ErrorMessage errorMessage = new ErrorMessage(coffeeHouseInputException.getMessage(), "Please provide correct input");
+        ErrorMessage errorMessage = new ErrorMessage(coffeeHouseInputException.getMessage(),
+                "Please provide correct input");
+
+        return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CoffeeHouseInternalException.class)
+    public final ResponseEntity<ErrorMessage> internalExceptionHandler(CoffeeHouseInternalException coffeeHouseInternalException) {
+        ErrorMessage errorMessage = new ErrorMessage(coffeeHouseInternalException.getMessage(),
+                "We Apologise for this. Kindly contact Support at <+++>");
 
         return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(CoffeeHouseDAOException.class)
     public final ResponseEntity<ErrorMessage> daoExceptionHandler(CoffeeHouseDAOException coffeeHouseDAOException) {
-        ErrorMessage errorMessage = new ErrorMessage(coffeeHouseDAOException.getMessage(), "Inernal Server Error while retrieveing Data, Contact Support at <+++>");
+        ErrorMessage errorMessage = new ErrorMessage(coffeeHouseDAOException.getMessage(),
+                "Inernal Server Error while retrieveing Data, Contact Support at <+++>");
 
         return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<ErrorMessage> defaultExceptionHandler(Exception exception) {
-        ErrorMessage errorMessage = new ErrorMessage(exception.getMessage(), "Unknown error occured, Contact Support at <+++>");
+        ErrorMessage errorMessage = new ErrorMessage(exception.getMessage(),
+                "Unknown error occurred, Kindly contact Support at <+++>");
 
         return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
