@@ -114,31 +114,31 @@ public class ActionsController {
 
         orderItemList.stream()
                 .filter(Objects::nonNull)
-                .forEach(this::checkValidVariety);
+                .forEach(this::checkValidVarietyAndQuantity);
 
         order.setOrderTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
-        order.setCustomerName(coffeeHouseDAO.getCustomerName(StringUtils.trim(order.getCustomerName())));
+        order.setCustomerName(coffeeHouseDAO.getCustomerName(StringUtils.trim(order.getCustomerPhoneNumber())));
 
         int orderId = coffeeHouseDAO.addOrder(order);
         order.setOrderId(orderId);
 
         coffeeHouseDAO.adjustAvailability(order);
 
-        generateOrderReceiptService.getReceipt(order);
-
-
-        return null;
-
-
+        return generateOrderReceiptService.getReceipt(order);
     }
 
-    private void checkValidVariety(OrderItem orderItem) {
+    private void checkValidVarietyAndQuantity(OrderItem orderItem) {
+        if (!inputValidatorService.isAvailabilityValid(orderItem.getQuantity())) {
+            logAndThrowCoffeeHouseInputException("Quantity Invalid: " + orderItem.getQuantity() +
+                    ". Quantity should be a valid integer.");
+        }
+
         if (!inputValidatorService.isVarietyPresent(orderItem.getCoffeeVarietyName())) {
             logAndThrowCoffeeHouseInputException("Item :" + orderItem.getCoffeeVarietyName() + " is not available in the menu.");
         }
 
         if (!inputValidatorService.isItemAvailable(orderItem.getCoffeeVarietyName(), orderItem.getQuantity())) {
-            logAndThrowCoffeeHouseInputException("We do not have enough of Item :" + orderItem.getCoffeeVarietyName() +
+            logAndThrowCoffeeHouseInputException("We do not have enough of Item: " + orderItem.getCoffeeVarietyName() +
                     " to serve you. Please try reducing quantity or try some other item in our menu.");
         }
     }

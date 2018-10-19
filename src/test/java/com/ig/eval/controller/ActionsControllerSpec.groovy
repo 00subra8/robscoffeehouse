@@ -4,7 +4,11 @@ import com.ig.eval.dao.CoffeeHouseDAO
 import com.ig.eval.exception.CoffeeHouseInputException
 import com.ig.eval.model.CoffeeVariety
 import com.ig.eval.model.Customer
+import com.ig.eval.model.Order
+import com.ig.eval.model.OrderItem
+import com.ig.eval.service.GenerateOrderReceiptService
 import com.ig.eval.service.InputValidatorService
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.Logger
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -18,6 +22,7 @@ class ActionsControllerSpec extends Specification {
         unit.logger = Mock(Logger)
         unit.inputValidatorService = Mock(InputValidatorService)
         unit.coffeeHouseDAO = Mock(CoffeeHouseDAO)
+        unit.generateOrderReceiptService = Mock(GenerateOrderReceiptService)
     }
 
     def "Try to add null Customer"() {
@@ -198,6 +203,158 @@ class ActionsControllerSpec extends Specification {
 
         then:
         result == "Coffee Variety " + coffeeVariety.getName() + " added successfully to the menu. Menu item number is: " + varietyId
+    }
+
+    def "Try to place null order"() {
+        when:
+        unit.processOrder(null)
+
+        then:
+        1 * unit.logger.error("No Order Input received")
+        thrown(CoffeeHouseInputException)
+    }
+
+    @Unroll("Order is invalid for customer phone number:#customerPhoneNumber")
+    def "Try to place order with blank customer phone number"(String customerPhoneNumber) {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = customerPhoneNumber
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("Customer phone number cannot be blank.")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        customerPhoneNumber << [null, "", " "]
+    }
+
+    def "Try to place order with non existent customer phone number"() {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "non existent number"
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> false
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("Customer with Phone Number: " + order.getCustomerPhoneNumber()
+                + " not in records. Please add new customer and reorder.")
+        thrown(CoffeeHouseInputException)
+    }
+
+    @Unroll("Order is invalid for item list:#itemList")
+    def "Try to place order with blank item list"(List<OrderItem> itemList) {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "valid phone number"
+        order.itemList = itemList
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> true
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("At least one item should be ordered.")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        itemList << [null, Collections.emptyList()]
+    }
+
+    def "Try to place order with invalid quantity"() {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "valid phone number"
+        OrderItem orderItem = new OrderItem()
+        orderItem.quantity = -2
+        List<OrderItem> itemList = new ArrayList<>()
+        itemList.add(orderItem)
+        order.itemList = itemList
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> true
+        unit.inputValidatorService.isAvailabilityValid(orderItem.getQuantity()) >> false
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("Quantity Invalid: " + orderItem.getQuantity() +
+                ". Quantity should be a valid integer.")
+        thrown(CoffeeHouseInputException)
+    }
+
+    def "Try to place order with invalid variety"() {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "valid phone number"
+        OrderItem orderItem = new OrderItem()
+        orderItem.quantity = 2
+        orderItem.coffeeVarietyName = "invalid variety"
+        List<OrderItem> itemList = new ArrayList<>()
+        itemList.add(orderItem)
+        order.itemList = itemList
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> true
+        unit.inputValidatorService.isAvailabilityValid(orderItem.getQuantity()) >> true
+        unit.inputValidatorService.isVarietyPresent(orderItem.getCoffeeVarietyName()) >> false
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("Item :" + orderItem.getCoffeeVarietyName() + " is not available in the menu.")
+        thrown(CoffeeHouseInputException)
+    }
+
+    def "Try to place order with unavailable item variety"() {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "valid phone number"
+        OrderItem orderItem = new OrderItem()
+        orderItem.quantity = 2000
+        orderItem.coffeeVarietyName = "valid variety"
+        List<OrderItem> itemList = new ArrayList<>()
+        itemList.add(orderItem)
+        order.itemList = itemList
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> true
+        unit.inputValidatorService.isAvailabilityValid(orderItem.getQuantity()) >> true
+        unit.inputValidatorService.isVarietyPresent(orderItem.getCoffeeVarietyName()) >> true
+        unit.inputValidatorService.isItemAvailable(orderItem.getCoffeeVarietyName(), orderItem.getQuantity()) >> false
+
+        when:
+        unit.processOrder(order)
+
+        then:
+        1 * unit.logger.error("We do not have enough of Item: " + orderItem.getCoffeeVarietyName() +
+                " to serve you. Please try reducing quantity or try some other item in our menu.")
+        thrown(CoffeeHouseInputException)
+    }
+
+    def "Try to place a valid order"() {
+        given:
+        Order order = new Order()
+        order.customerPhoneNumber = "valid phone number"
+        OrderItem orderItem = new OrderItem()
+        orderItem.quantity = 2
+        orderItem.coffeeVarietyName = "valid variety"
+        List<OrderItem> itemList = new ArrayList<>()
+        itemList.add(orderItem)
+        order.itemList = itemList
+        unit.inputValidatorService.isCustomerValid(order.customerPhoneNumber) >> true
+        unit.inputValidatorService.isAvailabilityValid(orderItem.getQuantity()) >> true
+        unit.inputValidatorService.isVarietyPresent(orderItem.getCoffeeVarietyName()) >> true
+        unit.inputValidatorService.isItemAvailable(orderItem.getCoffeeVarietyName(), orderItem.getQuantity()) >> true
+        unit.coffeeHouseDAO.getCustomerName(StringUtils.trim(order.getCustomerPhoneNumber())) >> "customer name"
+        unit.coffeeHouseDAO.addOrder(order) >> 12
+        String receipt = "RECEIPT"
+        unit.coffeeHouseDAO.adjustAvailability(order) >> null
+        unit.generateOrderReceiptService.getReceipt(order) >> receipt
+
+        expect:
+        receipt == unit.processOrder(order)
+
     }
 
 }

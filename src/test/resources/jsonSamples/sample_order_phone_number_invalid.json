@@ -1,0 +1,11 @@
+{
+  "customerPhoneNumber": "123456S7888",
+  "itemList": [
+    {"coffeeVarietyName": "Mocha",
+      "quantity":"2"
+    },
+    {"coffeeVarietyName": "Chaii",
+      "quantity":"2"
+    }
+  ]
+}

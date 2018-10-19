@@ -6,6 +6,5 @@ public class CoffeeHouseInternalException extends RuntimeException {
 
     public CoffeeHouseInternalException(String message) {
         super(message);
-
     }
 }

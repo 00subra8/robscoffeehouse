@@ -4,9 +4,15 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.ig.eval.model.CoffeeVariety;
 import com.ig.eval.model.Customer;
+import com.ig.eval.model.Order;
+import com.ig.eval.model.OrderItem;
 import cucumber.api.CucumberOptions;
 import cucumber.api.java.en.When;
 import cucumber.api.junit.Cucumber;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -17,7 +23,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -29,6 +37,7 @@ public class CucumberStepDefinitions {
 
     private static final String ADD_CUSTOMER_PATH = "/addCustomer";
     private static final String ADD_COFFEE_VARIETY_PATH = "/addVariety";
+    private static final String ORDER_PATH = "/order";
     private static final String APPLICATION_JSON = "application/json";
 
 
@@ -63,6 +72,24 @@ public class CucumberStepDefinitions {
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
         assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
+
+        wireMockServer.stop();
+
+    }
+
+    @When("^Post Request with below order values is requested to get \"([^\"]+)\" http status response$")
+    public void postOrderAdd(String expectedStatus, List<Map<String, String>> orderMapList) throws IOException {
+        String jsonString = getJsonString("jsonSamples/sample_order_add.json");
+
+        Order order = convertOrderMapListToOrder(ListUtils.emptyIfNull(orderMapList));
+
+        wireMockServer.start();
+
+        configureAndStubWireMockForOrders(order, 200);
+
+        HttpResponse response = postRequestAndGetResponse(jsonString, ORDER_PATH);
+
+        assertResponse(expectedStatus, response, ORDER_PATH);
 
         wireMockServer.stop();
 
@@ -148,6 +175,60 @@ public class CucumberStepDefinitions {
 
     }
 
+    @When("^Post Request with invalid customer phone number is requested to get \"([^\"]+)\" http status response$")
+    public void postOrderInvalidCustomerPhoneNumber(String expectedStatus, List<Map<String, String>> orderMapList) throws IOException {
+        String jsonString = getJsonString("jsonSamples/sample_order_phone_number_invalid.json");
+
+        Order order = convertOrderMapListToOrder(ListUtils.emptyIfNull(orderMapList));
+
+        wireMockServer.start();
+
+        configureAndStubWireMockForOrders(order, 400);
+
+        HttpResponse response = postRequestAndGetResponse(jsonString, ORDER_PATH);
+
+        assertResponse(expectedStatus, response, ORDER_PATH);
+
+        wireMockServer.stop();
+
+    }
+
+    @When("^Post Request with invalid quantity is requested to get \"([^\"]+)\" http status response$")
+    public void postOrderInvalidQuantity(String expectedStatus, List<Map<String, String>> orderMapList) throws IOException {
+        String jsonString = getJsonString("jsonSamples/sample_order_quantity_invalid.json");
+
+        Order order = convertOrderMapListToOrder(ListUtils.emptyIfNull(orderMapList));
+
+        wireMockServer.start();
+
+        configureAndStubWireMockForOrders(order, 400);
+
+        HttpResponse response = postRequestAndGetResponse(jsonString, ORDER_PATH);
+
+        assertResponse(expectedStatus, response, ORDER_PATH);
+
+        wireMockServer.stop();
+
+    }
+
+    @When("^Post Request with invalid customer variety is requested to get \"([^\"]+)\" http status response$")
+    public void postOrderInvalidVariety(String expectedStatus, List<Map<String, String>> orderMapList) throws IOException {
+        String jsonString = getJsonString("jsonSamples/sample_order_variety_invalid.json");
+
+        Order order = convertOrderMapListToOrder(ListUtils.emptyIfNull(orderMapList));
+
+        wireMockServer.start();
+
+        configureAndStubWireMockForOrders(order, 400);
+
+        HttpResponse response = postRequestAndGetResponse(jsonString, ORDER_PATH);
+
+        assertResponse(expectedStatus, response, ORDER_PATH);
+
+        wireMockServer.stop();
+
+    }
+
     private HttpResponse postRequestAndGetResponse(String jsonString, String endpoint) throws IOException {
         HttpPost request = new HttpPost("http://localhost:" + wireMockServer.port() + endpoint);
         StringEntity entity = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
@@ -176,6 +257,18 @@ public class CucumberStepDefinitions {
                 .willReturn(aResponse().withStatus(status)));
     }
 
+    private void configureAndStubWireMockForOrders(Order order, int status) {
+        configureFor("localhost", wireMockServer.port());
+        stubFor(post(urlEqualTo(ORDER_PATH))
+                .withHeader("content-type", equalTo(APPLICATION_JSON))
+                .withRequestBody(containing(order.getCustomerPhoneNumber()))
+                .withRequestBody(containing(order.getItemList().get(0).getCoffeeVarietyName()))
+                .withRequestBody(containing(order.getItemList().get(0).getQuantity()))
+                .withRequestBody(containing(order.getItemList().get(1).getCoffeeVarietyName()))
+                .withRequestBody(containing(order.getItemList().get(1).getCoffeeVarietyName()))
+                .willReturn(aResponse().withStatus(status)));
+    }
+
     private void assertResponse(String expectedStatus, HttpResponse response, String addCustomerPath) {
         assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
         verify(postRequestedFor(urlEqualTo(addCustomerPath))
@@ -185,5 +278,33 @@ public class CucumberStepDefinitions {
     private String getJsonString(String s) {
         InputStream jsonInputStream = this.getClass().getClassLoader().getResourceAsStream(s);
         return new Scanner(jsonInputStream, "UTF-8").useDelimiter("\\Z").next();
+    }
+
+    private Order convertOrderMapListToOrder(List<Map<String, String>> orderMapList) {
+        Order order = new Order();
+        if (!orderMapList.isEmpty()) {
+            Map<String, String> orderMap = MapUtils.emptyIfNull(orderMapList.get(0));
+            order.setCustomerPhoneNumber(orderMap.get("Customer Phone Number"));
+            OrderItem orderItem1 = new OrderItem();
+            String[] itemList1 = StringUtils.split(orderMap.get("Item List1"), ",");
+            if (itemList1 != null && itemList1.length > 1) {
+                orderItem1.setCoffeeVarietyName(itemList1[0]);
+                orderItem1.setQuantity(itemList1[1]);
+            }
+            List<OrderItem> orderItems = new ArrayList<>();
+            orderItems.add(orderItem1);
+
+            OrderItem orderItem2 = new OrderItem();
+            String[] itemList2 = StringUtils.split(orderMap.get("Item List2"), ",");
+            if (itemList2 != null && itemList2.length > 1) {
+                orderItem2.setCoffeeVarietyName(itemList2[0]);
+                orderItem2.setQuantity(itemList2[1]);
+            }
+            orderItems.add(orderItem2);
+
+            order.setItemList(orderItems);
+        }
+
+        return order;
     }
 }
