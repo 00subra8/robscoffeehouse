@@ -26,7 +26,8 @@ public class GenerateOrderReceiptService {
     private CoffeeHouseDAO coffeeHouseDAO;
 
     public String getReceipt(Order order) {
-        if (order == null) {
+        if (order == null
+                || order.getOrderId() == 0) {
             throw new CoffeeHouseInputException("Error while trying to generate receipt. No Order details found");
         }
 
@@ -49,7 +50,7 @@ public class GenerateOrderReceiptService {
                 .addEntry(getNewLine())
                 .addEntry(getNewLine())
                 .addEntry(getNewLine())
-                .addEntry(String.format("Item%-25sQuantity%-18sPrice"," "," "))
+                .addEntry(String.format("Item%-25sQuantity%-18sPrice", " ", " "))
                 .addEntry(getNewLine());
 
         populateItemList(order.getItemList());

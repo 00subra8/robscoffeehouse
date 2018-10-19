@@ -121,7 +121,13 @@ public class InputValidatorService {
         Optional<String> matchedVariety = getMatch(coffeeVarietyName, allVarietyNames);
         if (matchedVariety.isPresent()) {
             int availableQuantity = coffeeHouseDAO.getAvailableQuantity(matchedVariety.get());
-            return availableQuantity >= Integer.valueOf(quantity);
+            try {
+                return availableQuantity >= Integer.valueOf(quantity);
+            } catch (NumberFormatException nfe) {
+                String availableQuantityInvalidMessage = "quantity not a number";
+                logger.error(availableQuantityInvalidMessage);
+                throw new CoffeeHouseInputException(availableQuantityInvalidMessage);
+            }
         }
         return false;
     }

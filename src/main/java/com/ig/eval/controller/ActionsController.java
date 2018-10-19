@@ -3,10 +3,8 @@ package com.ig.eval.controller;
 import com.ig.eval.configuration.CoffeeHouseConfiguration;
 import com.ig.eval.dao.CoffeeHouseDAO;
 import com.ig.eval.exception.CoffeeHouseInputException;
-import com.ig.eval.model.CoffeeVariety;
-import com.ig.eval.model.Customer;
-import com.ig.eval.model.Order;
-import com.ig.eval.model.OrderItem;
+import com.ig.eval.model.*;
+import com.ig.eval.service.GenerateExcelReportService;
 import com.ig.eval.service.GenerateOrderReceiptService;
 import com.ig.eval.service.InputValidatorService;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +36,9 @@ public class ActionsController {
 
     @Autowired
     private GenerateOrderReceiptService generateOrderReceiptService;
+
+    @Autowired
+    private GenerateExcelReportService generateExcelReportService;
 
     @Autowired
     private CoffeeHouseDAO coffeeHouseDAO;
@@ -125,6 +128,14 @@ public class ActionsController {
         coffeeHouseDAO.adjustAvailability(order);
 
         return generateOrderReceiptService.getReceipt(order);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/report")
+    public ModelAndView getReport(HttpServletResponse httpServletResponse) {
+        List<Report> reportList = coffeeHouseDAO.getReport();
+        generateExcelReportService.createExcelReport(httpServletResponse, reportList);
+
+        return null;
     }
 
     private void checkValidVarietyAndQuantity(OrderItem orderItem) {

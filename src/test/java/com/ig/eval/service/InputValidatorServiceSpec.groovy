@@ -13,6 +13,7 @@ class InputValidatorServiceSpec extends Specification {
     void setup() {
         unit = new InputValidatorService()
         unit.logger = Mock(Logger)
+        unit.coffeeHouseDAO = Mock(CoffeeHouseDAO)
     }
 
     @Unroll("For customer name #customerName expected result is #result")
@@ -171,6 +172,86 @@ class InputValidatorServiceSpec extends Specification {
 
         where:
         price << [null, "", " ", "dfsd", "4.5J"]
+    }
+
+    def "check for non available variety"() {
+        given:
+        def varietyName = "Invalid variety"
+        unit.coffeeHouseDAO.getAllVarietyNames() >> ["var1", "var2"]
+
+        expect:
+        !unit.isItemAvailable(varietyName, "any quantity")
+
+    }
+
+    @Unroll("For quantity: #quantity, with available quantity: #availableQuantity the expected result is: #result")
+    def "check for available variety with invalid/valid quantity"(String quantity, int availableQuantity, boolean result) {
+        given:
+        def varietyName = "valid variety"
+        unit.coffeeHouseDAO.getAllVarietyNames() >> ["var1", "var2", varietyName]
+        unit.coffeeHouseDAO.getAvailableQuantity(varietyName) >> availableQuantity
+
+        expect:
+        unit.isItemAvailable(varietyName, quantity) == result
+
+        where:
+        quantity | availableQuantity | result
+        "5"      | 50                | true
+        "5"      | 4                 | false
+    }
+
+    @Unroll("For invalid quantity: #quantity exception is thrown")
+    def "check for available variety with invalid quantity"(String quantity) {
+        given:
+        def varietyName = "valid variety"
+        unit.coffeeHouseDAO.getAllVarietyNames() >> ["var1", "var2", varietyName]
+        unit.coffeeHouseDAO.getAvailableQuantity(varietyName) >> 300
+
+        when:
+        unit.isItemAvailable(varietyName, quantity)
+
+        then:
+        1 * unit.logger.error("quantity not a number")
+        thrown(CoffeeHouseInputException)
+
+        where:
+        quantity << ["invalid", null, "", " "]
+    }
+
+    @Unroll("For variety: #variety expected result is #result")
+    def "Check if variety is present"(String variety, boolean result) {
+        given:
+        unit.coffeeHouseDAO.getAllVarietyNames() >> ["var1", "var2", "var3"]
+
+        expect:
+        unit.isVarietyPresent(variety) == result
+
+        where:
+        variety | result
+        "var1"  | true
+        "var2"  | true
+        "var4"  | false
+        "45"    | false
+        null    | false
+
+    }
+
+    @Unroll("For customer with phone number: #customerPhoneNumber expected result is #result")
+    def "Check if customer is valid"(String customerPhoneNumber, boolean result) {
+        given:
+        unit.coffeeHouseDAO.getAllPhoneNumbers() >> ["123", "456", "789"]
+
+        expect:
+        unit.isCustomerValid(customerPhoneNumber) == result
+
+        where:
+        customerPhoneNumber | result
+        "123"               | true
+        "456"               | true
+        "var4"              | false
+        "45"                | false
+        null                | false
+
     }
 
 }

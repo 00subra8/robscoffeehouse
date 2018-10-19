@@ -1,17 +1,17 @@
 package com.ig.eval.dao;
 
 import com.ig.eval.exception.CoffeeHouseDAOException;
-import com.ig.eval.model.CoffeeVariety;
-import com.ig.eval.model.Customer;
-import com.ig.eval.model.Order;
-import com.ig.eval.model.OrderItem;
+import com.ig.eval.model.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -168,6 +168,33 @@ public class CoffeeHouseDAO {
             throw new CoffeeHouseDAOException("Unable to retrieve/update information from/to DB while adjusting availability");
         }
 
+    }
+
+    public List<Report> getReport() {
+        try {
+            return jdbcTemplate.query("SELECT TO_CHAR ( SYSDATE , 'DD-MON-YYYY') DATE, CV.ID, CV.NAME VARIETY, " +
+                            " CV.AVAILABLE_QUANTITY+ ISNULL(SUM(O.QUANTITY), 0) INITIAL_AVAILABILITY, " +
+                            " ISNULL(SUM(O.QUANTITY), 0) QUANTITY_SOLD " +
+                            " FROM COFFEE_VARIETY CV " +
+                            " LEFT OUTER JOIN ORDERS O ON O.COFFEE_VARIETY_ID = CV.ID " +
+                            " AND O.ORDER_TIME >= TRUNC(SYSDATE) GROUP BY CV.ID",
+                    new ReportMapper());
+        } catch (DataAccessException dae) {
+            throw new CoffeeHouseDAOException("Unable to retrieve customer Id from DB");
+        }
+    }
+
+    private class ReportMapper implements RowMapper<Report> {
+        @Override
+        public Report mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Report report = new Report();
+            report.setDate(rs.getString("DATE"));
+            report.setVariety(rs.getString("VARIETY"));
+            report.setInitialAvailability(rs.getString("INITIAL_AVAILABILITY"));
+            report.setQuantitySold(rs.getString("QUANTITY_SOLD"));
+
+            return report;
+        }
     }
 }
 

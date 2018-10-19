@@ -14,6 +14,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -72,6 +73,20 @@ public class CucumberStepDefinitions {
         HttpResponse response = postRequestAndGetResponse(jsonString, ADD_COFFEE_VARIETY_PATH);
 
         assertResponse(expectedStatus, response, ADD_COFFEE_VARIETY_PATH);
+
+        wireMockServer.stop();
+
+    }
+
+    @When("^GET Request is sent for report url \"([^\"]+)\" then \"([^\"]+)\" http status response is received$")
+    public void getReport(String path, String expectedStatus) throws IOException {
+        wireMockServer.start();
+
+        configureAndStubWireMockForReport(path, Integer.parseInt(expectedStatus));
+
+        HttpResponse response = getRequestAndGetResponse(path);
+
+        assertResponseForGet(expectedStatus, response, path);
 
         wireMockServer.stop();
 
@@ -237,6 +252,11 @@ public class CucumberStepDefinitions {
         return httpClient.execute(request);
     }
 
+    private HttpResponse getRequestAndGetResponse(String endpoint) throws IOException {
+        HttpGet request = new HttpGet("http://localhost:" + wireMockServer.port() + endpoint);
+        return httpClient.execute(request);
+    }
+
     private void configureAndStubWireMockForCustomerAdd(List<Customer> customerList, int status) {
         configureFor("localhost", wireMockServer.port());
         stubFor(post(urlEqualTo(ADD_CUSTOMER_PATH))
@@ -269,10 +289,21 @@ public class CucumberStepDefinitions {
                 .willReturn(aResponse().withStatus(status)));
     }
 
+    private void configureAndStubWireMockForReport(String path, int status) {
+        configureFor("localhost", wireMockServer.port());
+        stubFor(get(urlEqualTo(path))
+                .willReturn(aResponse().withStatus(status)));
+    }
+
     private void assertResponse(String expectedStatus, HttpResponse response, String addCustomerPath) {
         assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
         verify(postRequestedFor(urlEqualTo(addCustomerPath))
                 .withHeader("content-type", equalTo(APPLICATION_JSON)));
+    }
+
+    private void assertResponseForGet(String expectedStatus, HttpResponse response, String addCustomerPath) {
+        assertEquals(Integer.valueOf(expectedStatus).intValue(), response.getStatusLine().getStatusCode());
+        verify(getRequestedFor(urlEqualTo(addCustomerPath)));
     }
 
     private String getJsonString(String s) {
